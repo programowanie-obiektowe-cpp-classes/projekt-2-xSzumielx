@@ -1,6 +1,8 @@
-#include "PrintHello.hpp"
+#include "Menu.hpp"
 
 int main()
 {
-    printHello();
+    Menu menu;
+    menu.run();
+    return 0;
 }
