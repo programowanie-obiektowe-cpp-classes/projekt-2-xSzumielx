@@ -1,6 +1,7 @@
 #pragma once
 #include <Eigen/Dense>
 #include <array>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 
@@ -48,6 +49,14 @@ public:
         vec_ = Rz * vec_;
     }
 
+    // obrót wokó³ dowolnej osi
+    void rotateAroundAxisThroughPoint(const Eigen::Vector3d& axisUnit, const Eigen::Vector3d& pointOnAxis, double angle)
+    {
+        Eigen::AngleAxisd aa(angle, axisUnit);
+
+        vec_ = aa * (vec_ - pointOnAxis) + pointOnAxis;
+    }
+
     // definicja p³aszczyzn
     enum class Plane
     {
@@ -56,7 +65,7 @@ public:
         XZ
     };
 
-    // rzutowanie punktu na p³aszczyznê
+    // rzutowanie punktu na jedn¹ z osiowych p³aszczyzn
     std::array< double, 2 > project(Plane plane) const
     {
         switch (plane)
@@ -71,6 +80,32 @@ public:
         throw std::runtime_error("Nieznana p³aszczyzna");
     }
 
+    // rzutowanie punktu na dowoln¹ p³aszczyznê zdefiniowan¹ przez punkt P0 i normaln¹ n.
+    Eigen::Vector3d projectToPlaneGlobal(const Eigen::Vector3d& planePoint, const Eigen::Vector3d& normal) const
+    {
+        if (normal.norm() == 0.0)
+            throw std::runtime_error("Normala nie moze byc zerowa");
+
+        Eigen::Vector3d n    = normal.normalized();
+        Eigen::Vector3d diff = vec_ - planePoint;
+
+        return vec_ - diff.dot(n) * n;
+    }
+
+
     // wyœwietlanie wspó³rzêdnych punktu
-    void printPoint() const { std::cout << "(" << vec_.x() << ", " << vec_.y() << ", " << vec_.z() << ")"; }
+    void printPoint() const
+    {
+        std::cout << "(" << cleanup(vec_.x()) << ", " << cleanup(vec_.y()) << ", " << cleanup(vec_.z()) << ")";
+    }
+
+    // dostêp do wektora
+    const Eigen::Vector3d& vec() const { return vec_; }
+
+    // dodanie tolerancji do policzonego wyniku
+    static double          cleanup(double v)
+    {
+        constexpr double EPS = 1e-12;
+        return (std::abs(v) < EPS) ? 0.0 : v;
+    }
 };
